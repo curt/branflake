@@ -8,12 +8,10 @@ result and then calling the `from_int(int)` class method.
 
 License: MIT. See LICENSE file for more details.
 """
-from base64 import b16encode
+from base64 import b16encode, b16decode
 from time import time, gmtime
 from secrets import token_bytes
 from uuid import UUID
-
-ONE_MILLION = 1000000
 
 class Branflake:
     """Encapsulates 128 bits of data, 64 of which correspond to microseconds
@@ -28,14 +26,29 @@ class Branflake:
     Usage: # Create flake flake = Branflake()
 
         # Store flake as `int`
-        flake_int = flake.to_int()
+        branflake_int = flake.to_int()
 
         # Reuse flake stored as `int`
-        another_flake = Branflake.from_int(flake_int)
+        another_flake = Branflake.from_int(branflake_int)
     """
+
+    ONE_MILLION = 1000000
+    TIME_BYTES_LEN = 8
+    RANDOM_BYTES_LEN = 8
+    TOTAL_BYTES_LEN = TIME_BYTES_LEN + RANDOM_BYTES_LEN
+    MICROSECONDS_MAX = (256 ** TIME_BYTES_LEN) - 1
+    BRANFLAKE_INT_MAX = (256 ** TOTAL_BYTES_LEN) - 1
+
     def __init__(self, microseconds=None, random_bytes=None):
-        self._time = int(microseconds or (time() * ONE_MILLION))
-        self._random_bytes = random_bytes or token_bytes(8)
+        if (microseconds
+                and ((microseconds < 1)
+                     or (microseconds > Branflake.MICROSECONDS_MAX))):
+            raise ValueError('microseconds: value out of range')
+        if random_bytes and (len(random_bytes) != Branflake.RANDOM_BYTES_LEN):
+            raise ValueError('random_bytes: incorrect length')
+
+        self._time = int(microseconds or (time() * Branflake.ONE_MILLION))
+        self._random_bytes = random_bytes or token_bytes(Branflake.RANDOM_BYTES_LEN)
         self._set_time_bytes()
 
     def __str__(self):
@@ -45,23 +58,54 @@ class Branflake:
         return '<Branflake %r>' % self.to_int()
 
     @classmethod
-    def from_int(cls, flake_int):
+    def from_int(cls, branflake_int):
         """Returns a new `Branflake` corresponding to a 128-bit `int`.
 
         Args:
-            flake_int: A 128-bit int returned from another `Branflake`
+            branflake_int: A 128-bit `int` returned from another `Branflake`
         """
-        all_bytes = flake_int.to_bytes(16, byteorder='big', signed=False)
-        time_bytes = all_bytes[0:8]
+        if (branflake_int < 0) or (branflake_int > Branflake.BRANFLAKE_INT_MAX):
+            raise ValueError('branflake_int: value out of range')
+
+        all_bytes = branflake_int.to_bytes(Branflake.TOTAL_BYTES_LEN, byteorder='big', signed=False)
+        return cls.from_bytes(all_bytes)
+
+    @classmethod
+    def from_hex_string(cls, branflake_hex_string):
+        """Returns a new `Branflake` corresponding to a 32-character
+        hexidecimal-encoded `string`.
+
+        Args:
+            branflake_hex_string: A 32-character hexidecimal-encoded `string`
+            returned from another `Branflake`
+        """
+        if len(branflake_hex_string) != Branflake.TOTAL_BYTES_LEN * 2:
+            raise ValueError('branflake_hex_string: incorrect length')
+
+        all_bytes = b16decode(branflake_hex_string)
+        return cls.from_bytes(all_bytes)
+
+    @classmethod
+    def from_bytes(cls, branflake_bytes):
+        """Returns a new `Branflake` corresponding to a 16-byte array.
+
+        Args:
+            branflake_hex_string: A 16-byte array returned from another
+            `Branflake`
+        """
+        if len(branflake_bytes) != Branflake.TOTAL_BYTES_LEN:
+            raise ValueError('branflake_bytes: incorrect length')
+
+        time_bytes = branflake_bytes[0:Branflake.TIME_BYTES_LEN]
         microseconds = int.from_bytes(
             time_bytes, byteorder='big', signed=False)
-        random_bytes = all_bytes[8:16]
+        random_bytes = branflake_bytes[Branflake.TIME_BYTES_LEN:Branflake.TOTAL_BYTES_LEN]
         return cls(microseconds, random_bytes)
 
     def to_seconds(self):
         """Returns a `float` corresponding to the epoch time in seconds
         of the Branflake."""
-        return self._time / ONE_MILLION
+        return self._time / Branflake.ONE_MILLION
 
     def to_gmtime(self):
         """Returns a time structure corresponding to the Branflake."""
@@ -107,4 +151,4 @@ class Branflake:
 
     def _set_time_bytes(self):
         self._time_bytes = self.to_microseconds().to_bytes(
-            8, byteorder='big', signed=False)
+            Branflake.TIME_BYTES_LEN, byteorder='big', signed=False)
