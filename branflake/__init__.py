@@ -147,7 +147,7 @@ class Branflake:
     def to_hex_string(self):
         """Returns a 32-character hexidecimal-encoded `string`
         corresponding to the Branflake."""
-        return self.to_hex_bytes().decode('utf-8').lower()
+        return self.to_hex_bytes().decode('utf-8')
 
     def _set_time_bytes(self):
         self._time_bytes = self.to_microseconds().to_bytes(
