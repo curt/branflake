@@ -8,10 +8,11 @@ result and then calling the `from_int(int)` class method.
 
 License: MIT. See LICENSE file for more details.
 """
-from base64 import b16encode, b16decode
+from base64 import b16encode, b16decode, urlsafe_b64encode, urlsafe_b64decode
 from time import time, gmtime
 from secrets import token_bytes
 from uuid import UUID
+from math import ceil
 
 class Branflake:
     """Encapsulates 128 bits of data, 64 of which correspond to microseconds
@@ -36,6 +37,8 @@ class Branflake:
     TIME_BYTES_LEN = 8
     RANDOM_BYTES_LEN = 8
     TOTAL_BYTES_LEN = TIME_BYTES_LEN + RANDOM_BYTES_LEN
+    BASE64_LEN = ceil(TOTAL_BYTES_LEN * 4 / 3)
+    BASE64_PADDED_LEN = ceil(TOTAL_BYTES_LEN / 6) * 8
     MICROSECONDS_MAX = (256 ** TIME_BYTES_LEN) - 1
     BRANFLAKE_INT_MAX = (256 ** TOTAL_BYTES_LEN) - 1
 
@@ -83,6 +86,25 @@ class Branflake:
             raise ValueError('branflake_hex_string: incorrect length')
 
         all_bytes = b16decode(branflake_hex_string)
+        return cls.from_bytes(all_bytes)
+
+    @classmethod
+    def from_base64_string(cls, branflake_base64_string: str):
+        """Returns a new `Branflake` corresponding to a 22-character
+        URL-safe base64-encoded `string`.
+
+        Args:
+            branflake_base64_string: A 22-character URL-safe base64-encoded `string`
+            returned from another `Branflake`
+        """
+        if len(branflake_base64_string) < Branflake.BASE64_LEN:
+            raise ValueError('branflake_base64_string: incorrect length')
+        if len(branflake_base64_string) > Branflake.BASE64_PADDED_LEN:
+            raise ValueError('branflake_base64_string: incorrect length')
+
+        all_bytes = urlsafe_b64decode(
+            branflake_base64_string.ljust(Branflake.BASE64_PADDED_LEN, '=')
+        )
         return cls.from_bytes(all_bytes)
 
     @classmethod
@@ -135,6 +157,11 @@ class Branflake:
         to the Branflake."""
         return b16encode(self.to_bytes())
 
+    def to_base64_bytes(self):
+        """Returns a 24-byte URL-safe base64-encoded array corresponding
+        to the Branflake."""
+        return urlsafe_b64encode(self.to_bytes())
+
     def to_int(self):
         """Returns a 128-bit `int` corresponding to the Branflake."""
         return int.from_bytes(
@@ -148,6 +175,11 @@ class Branflake:
         """Returns a 32-character hexidecimal-encoded `string`
         corresponding to the Branflake."""
         return self.to_hex_bytes().decode('utf-8')
+
+    def to_base64_string(self):
+        """Returns a 22-character URL-safe base64-encoded `string`
+        corresponding to the Branflake."""
+        return self.to_base64_bytes().decode('utf-8')[0:Branflake.BASE64_LEN]
 
     def _set_time_bytes(self):
         self._time_bytes = self.to_microseconds().to_bytes(

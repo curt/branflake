@@ -50,6 +50,7 @@ def test_first():
     assert len(FIRST_BRANFLAKE.to_bytes()) == 16
     assert len(FIRST_BRANFLAKE.to_hex_bytes()) == 32
     assert len(FIRST_BRANFLAKE.to_hex_string()) == 32
+    assert len(FIRST_BRANFLAKE.to_base64_string()) == 22
     assert isinstance(FIRST_BRANFLAKE.to_gmtime(), struct_time)
     assert isinstance(FIRST_BRANFLAKE.to_uuid(), UUID)
     assert isinstance(FIRST_BRANFLAKE.to_microseconds(), int)
@@ -70,6 +71,8 @@ def test_reconstitute():
     assert ((Branflake.from_hex_string(FIRST_BRANFLAKE.to_hex_string())).to_int()
             == FIRST_BRANFLAKE.to_int())
     assert ((Branflake.from_bytes(FIRST_BRANFLAKE.to_bytes())).to_int()
+            == FIRST_BRANFLAKE.to_int())
+    assert ((Branflake.from_base64_string(FIRST_BRANFLAKE.to_base64_string())).to_int()
             == FIRST_BRANFLAKE.to_int())
 
 def test_out_of_bounds():
