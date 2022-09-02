@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "branflake"
+version = "0.0.0.dev5"
+authors = [
+  { name = "Curt Gilman", email = "curt@gilm.net" }
+]
+description = "A modified, simplified 128-bit pseudo-flake ID generator for Python."
+keywords= [ "flake", "flakeid" ]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.6"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/curt/branflake"
+"Bug Tracker" = "https://github.com/curt/branflake/issues"
