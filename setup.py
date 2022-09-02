@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="branflake",
-    version="0.0.0.dev3",
+    version="0.0.0.dev4",
     author="Curt Gilman",
     author_email="curt@goneaway.blog",
     description="A modified, simplified 128-bit pseudo-flake ID generator for Python",

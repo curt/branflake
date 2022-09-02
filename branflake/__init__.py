@@ -124,6 +124,12 @@ class Branflake:
         random_bytes = branflake_bytes[Branflake.TIME_BYTES_LEN:Branflake.TOTAL_BYTES_LEN]
         return cls(microseconds, random_bytes)
 
+    @classmethod
+    def uuid(cls):
+        """Returns the `UUID` corresponding to a newly created `Branflake`.
+        """
+        return cls().to_uuid()
+
     def to_seconds(self):
         """Returns a `float` corresponding to the epoch time in seconds
         of the Branflake."""
